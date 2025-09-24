@@ -1,0 +1,8 @@
+opencv-python
+numpy
+matplotlib
+seaborn
+scikit-learn
+tensorflow>=2.8,<2.14
+mediapipe
+protobuf>=3.20,<4
