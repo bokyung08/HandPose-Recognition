@@ -12,7 +12,7 @@
 
 ```mermaid
 graph LR
-    %% 스타일 정의 (논문용 깔끔한 스타일)
+    %% 스타일 정의
     classDef input fill:#ffffff,stroke:#000000,stroke-width:2px;
     classDef conv fill:#dae8fc,stroke:#6c8ebf,stroke-width:2px;
     classDef lstm fill:#d5e8d4,stroke:#82b366,stroke-width:2px;
@@ -20,32 +20,32 @@ graph LR
     classDef dense fill:#f8cecc,stroke:#b85450,stroke-width:2px;
     classDef out fill:#e1d5e7,stroke:#9673a6,stroke-width:2px;
 
-    %% 1. 입력 정의
+    %% 1. 입력 정의 (텍스트에 따옴표 추가하여 에러 방지)
     subgraph Inputs [Input Data]
         direction TB
-        VI(Video Sequence<br/>(T, H, W, 1)):::input
-        LI(Landmark Sequence<br/>(T, Joints x 3)):::input
+        VI("Video Sequence<br/>(T, H, W, 1)"):::input
+        LI("Landmark Sequence<br/>(T, Joints x 3)"):::input
     end
 
-    %% 2. Video Stream (Spatiotemporal)
+    %% 2. Video Stream
     subgraph VideoStream [Stream 1: Spatiotemporal Feature Extraction]
         direction LR
-        VI --> C1[Conv3D (32)<br/>+ MaxPool]:::conv
-        C1 --> C2[Conv3D (64)<br/>+ MaxPool]:::conv
-        C2 --> C3[Conv3D (128)<br/>+ MaxPool]:::conv
-        C3 --> TDF[TimeDistributed<br/>Flatten]:::conv
-        TDF --> VL[LSTM (128)]:::lstm
-        VL --> VA[Attention<br/>Mechanism]:::att
-        VA --> VC(Video Context):::input
+        VI --> C1["Conv3D (32)<br/>+ MaxPool"]:::conv
+        C1 --> C2["Conv3D (64)<br/>+ MaxPool"]:::conv
+        C2 --> C3["Conv3D (128)<br/>+ MaxPool"]:::conv
+        C3 --> TDF["TimeDistributed<br/>Flatten"]:::conv
+        TDF --> VL["LSTM (128)"]:::lstm
+        VL --> VA["Attention<br/>Mechanism"]:::att
+        VA --> VC("Video Context"):::input
     end
 
-    %% 3. Landmark Stream (Temporal)
+    %% 3. Landmark Stream
     subgraph LandmarkStream [Stream 2: Temporal Feature Extraction]
         direction LR
-        LI --> LL[LSTM (128)]:::lstm
-        LL --> LA[Attention<br/>Mechanism]:::att
-        LA --> LC(Landmark Context):::input
-        LC --> LD[Dense (128)<br/>ReLU]:::dense
+        LI --> LL["LSTM (128)"]:::lstm
+        LL --> LA["Attention<br/>Mechanism"]:::att
+        LA --> LC("Landmark Context"):::input
+        LC --> LD["Dense (128)<br/>ReLU"]:::dense
     end
 
     %% 4. Fusion & Classification
@@ -53,9 +53,9 @@ graph LR
         direction LR
         VC --> CON[Concatenate]:::dense
         LD --> CON
-        CON --> FC1[Dense (128)<br/>ReLU]:::dense
-        FC1 --> DO[Dropout (0.5)]:::dense
-        DO --> OUT(Softmax<br/>Classifier):::out
+        CON --> FC1["Dense (128)<br/>ReLU"]:::dense
+        FC1 --> DO["Dropout (0.5)"]:::dense
+        DO --> OUT("Softmax<br/>Classifier"):::out
     end
 
     %% 연결선 스타일
