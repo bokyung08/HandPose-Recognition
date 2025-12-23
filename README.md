@@ -11,45 +11,55 @@
 이 모델은 영상 프레임(Video)과 손 좌표(Landmark) 데이터를 결합하여 추론하는 멀티모달 구조를 가집니다.
 
 ```mermaid
-graph TD
-    %% 입력 계층
-    subgraph Inputs [입력 데이터]
-        VI(Video Input<br/>Shape: Seq, H, W, 1)
-        LI(Landmark Input<br/>Shape: Seq, Joints*3)
+graph LR
+    %% 스타일 정의 (논문용 깔끔한 스타일)
+    classDef input fill:#ffffff,stroke:#000000,stroke-width:2px;
+    classDef conv fill:#dae8fc,stroke:#6c8ebf,stroke-width:2px;
+    classDef lstm fill:#d5e8d4,stroke:#82b366,stroke-width:2px;
+    classDef att fill:#ffe6cc,stroke:#d79b00,stroke-width:2px;
+    classDef dense fill:#f8cecc,stroke:#b85450,stroke-width:2px;
+    classDef out fill:#e1d5e7,stroke:#9673a6,stroke-width:2px;
+
+    %% 1. 입력 정의
+    subgraph Inputs [Input Data]
+        direction TB
+        VI(Video Sequence<br/>(T, H, W, 1)):::input
+        LI(Landmark Sequence<br/>(T, Joints x 3)):::input
     end
 
-    %% 비디오 브랜치 (3D CNN + LSTM + Attention)
-    subgraph VideoBranch [Video Branch]
-        VI --> C1[Conv3D 32 + MaxPool]
-        C1 --> C2[Conv3D 64 + MaxPool]
-        C2 --> C3[Conv3D 128 + MaxPool]
-        C3 --> TDF[TimeDistributed Flatten]
-        TDF --> VLSTM[LSTM 128<br/>return_sequences=True]
-        VLSTM --> VAtt[Attention Layer]
-        VAtt --> VContext(Video Context Vector)
+    %% 2. Video Stream (Spatiotemporal)
+    subgraph VideoStream [Stream 1: Spatiotemporal Feature Extraction]
+        direction LR
+        VI --> C1[Conv3D (32)<br/>+ MaxPool]:::conv
+        C1 --> C2[Conv3D (64)<br/>+ MaxPool]:::conv
+        C2 --> C3[Conv3D (128)<br/>+ MaxPool]:::conv
+        C3 --> TDF[TimeDistributed<br/>Flatten]:::conv
+        TDF --> VL[LSTM (128)]:::lstm
+        VL --> VA[Attention<br/>Mechanism]:::att
+        VA --> VC(Video Context):::input
     end
 
-    %% 랜드마크 브랜치 (LSTM + Attention)
-    subgraph LandmarkBranch [Landmark Branch]
-        LI --> LLSTM[LSTM 128<br/>return_sequences=True]
-        LLSTM --> LAtt[Attention Layer]
-        LAtt --> LContext(Landmark Context Vector)
-        LContext --> LDense[Dense 128 + ReLU]
+    %% 3. Landmark Stream (Temporal)
+    subgraph LandmarkStream [Stream 2: Temporal Feature Extraction]
+        direction LR
+        LI --> LL[LSTM (128)]:::lstm
+        LL --> LA[Attention<br/>Mechanism]:::att
+        LA --> LC(Landmark Context):::input
+        LC --> LD[Dense (128)<br/>ReLU]:::dense
     end
 
-    %% 결합 및 출력
-    subgraph Fusion [Fusion & Output]
-        VContext --> Concat[Concatenate]
-        LDense --> Concat
-        Concat --> FDense[Dense 128 + ReLU]
-        FDense --> Drop[Dropout 0.5]
-        Drop --> Out[Output Layer<br/>Dense Num_Classes + Softmax]
+    %% 4. Fusion & Classification
+    subgraph FusionLayer [Multimodal Fusion & Classification]
+        direction LR
+        VC --> CON[Concatenate]:::dense
+        LD --> CON
+        CON --> FC1[Dense (128)<br/>ReLU]:::dense
+        FC1 --> DO[Dropout (0.5)]:::dense
+        DO --> OUT(Softmax<br/>Classifier):::out
     end
 
-    style Inputs fill:#f9f,stroke:#333,stroke-width:2px
-    style VideoBranch fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
-    style LandmarkBranch fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
-    style Fusion fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    %% 연결선 스타일
+    linkStyle default stroke:#333,stroke-width:1.5px;
 ```
 
 Video Branch: 3D CNN을 통해 영상의 시공간적 특징을 추출하고, LSTM과 Attention을 통해 중요한 프레임 정보를 요약합니다.
